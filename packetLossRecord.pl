@@ -34,7 +34,7 @@ my @sites = (
 #     "packetsReceived" => [],
 # };
 my @rows = ();
-push(@rows, "timeStarted,timeTaken,ip,lossPct,bounceData,bounceNumber,failureSection,packetsSent,packetsReceived\n" );
+push(@rows, "timeStarted,timeTaken,site,ip,lossPct,bounceData,bounceNumber,failureSection,packetsSent,packetsReceived\n" );
 
 sub dealWithSetting {
     my ($settings) = @_;
@@ -83,10 +83,6 @@ sub doPing (){
             die;
         }
     }
-
-    print "Beginning program\n";
-    print "pinging various sites\n";
-    
     foreach my $site (@sites){
         print "beginning ping on " . $site . "\n";
         my $log = "";
@@ -98,7 +94,6 @@ sub doPing (){
         my $failureSection  = ();
         my $packetsSent     = ();
         my $packetsReceived = ();
-
         my $timeStarted     = time();
         open( my $CH, "ping " . $site . " -c ".$packetCount."|");
         while (  my $line = <$CH> ){
@@ -106,6 +101,7 @@ sub doPing (){
         }
         close($CH);
         $timeTaken = time() - $timeStarted;
+        # TODO: Account for "unknown host" failure
         ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($timeStarted);
         $timeStarted = sprintf("%04d-%02d-%02d %02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min, $sec);
         ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($timeTaken);
@@ -129,7 +125,6 @@ sub doPing (){
         if ( $log =~ /(\d{1,3})\% packet loss/ ){
             $lossPct = $1;
         }
-
         print "ping complete, packet loss is " . $lossPct . "\n";
         if ($lossPct > 0){
             print "packet loss detected.\n";
@@ -142,16 +137,7 @@ sub doPing (){
             $packetsReceived = $1;
         }
         # print "pushing the following: $timeStarted :: $timeTaken :: $ip :: $lossPct :: $bounceData :: $bounceNumber :: $failureSection :: $packetsSent :: $packetsReceived\n";
-        push(@rows, "$timeStarted,$timeTaken,$ip,$lossPct,$bounceData,$bounceNumber,$failureSection,$packetsSent,$packetsReceived\n" );
-        # push( @{$data{"timeStarted"}}, $timeStarted );
-        # push( @{$data{"timeTaken"}}, $timeTaken );
-        # push( @{$data{"ip"}}, $ip );
-        # push( @{$data{"lossPct"}}, $lossPct );
-        # push( @{$data{"bounceData"}}, $bounceData );
-        # push( @{$data{"bounceNumber"}}, $bounceNumber );
-        # push( @{$data{"failureSection"}}, $failureSection );
-        # push( @{$data{"packetsSent"}}, $packetsSent );
-        # push( @{$data{"packetsReceived"}}, $packetsReceived );
+        push(@rows, "$timeStarted,$timeTaken,$site,$ip,$lossPct,$bounceData,$bounceNumber,$failureSection,$packetsSent,$packetsReceived\n" );
         # traceroute 
     }
     print "done pinging\n";
@@ -180,7 +166,9 @@ sub main(){
     if ($totalRuns > 0){
         for (my $i = 0; $i < $totalRuns; $i++){
             doPing();
-            sleep($delayInterval);
+            unless ($i == $totalRuns){
+                sleep($delayInterval);
+            }
         }
     }
     else{
