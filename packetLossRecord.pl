@@ -3,8 +3,9 @@
 #use strict;
 #use warnings;
 
-my $packetCount = 4;
-
+my $totalRuns = 1; # if zero, runs indefinably, otherwise this many times
+my $packetCount = 50; # how many packets each ping command runs
+my $delayInterval = 1800; # time in seconds between bouts of pings
 my @sites = (
     "www.google.com",
     "www.youtube.com",
@@ -53,7 +54,7 @@ sub writeFile {
     }
 }
 
-sub main (){
+sub doPing (){
     my $settings = "settings.txt";
     my $err;
     if ( -f $settings){
@@ -87,8 +88,8 @@ sub main (){
     print "pinging various sites\n";
     
     foreach my $site (@sites){
+        print "beginning ping on " . $site . "\n";
         my $log = "";
-        my $timeStarted     = time();
         my $timeTaken       = ();
         my $ip              = ();
         my $lossPct         = ();
@@ -98,6 +99,7 @@ sub main (){
         my $packetsSent     = ();
         my $packetsReceived = ();
 
+        my $timeStarted     = time();
         open( my $CH, "ping " . $site . " -c ".$packetCount."|");
         while (  my $line = <$CH> ){
             $log .= $line;
@@ -127,9 +129,14 @@ sub main (){
         if ( $log =~ /(\d{1,3})\% packet loss/ ){
             $lossPct = $1;
         }
-        $bounceData     = "TODO";
-        $bounceNumber   = "TODO";
-        $failureSection = "TODO";
+
+        print "ping complete, packet loss is " . $lossPct . "\n";
+        if ($lossPct > 0){
+            print "packet loss detected.\n";
+            $bounceData     = "TODO";
+            $bounceNumber   = "TODO";
+            $failureSection = "TODO";
+        }
         $packetsSent    = $packetCount;
         if ( $log =~ /(\d{1,$packetCount}) received/ ){
             $packetsReceived = $1;
@@ -167,6 +174,22 @@ sub main (){
     }
 }
 
-
+sub main(){
+    print "beginning program.\n";
+    print "total runs = " . $totalRuns ."\n";
+    if ($totalRuns > 0){
+        for (my $i = 0; $i < $totalRuns; $i++){
+            doPing();
+            sleep($delayInterval);
+        }
+    }
+    else{
+        while (true){
+            doPing();
+            sleep($delayInterval);
+        }
+    }
+    print "all done\n";
+}
 
 main();
