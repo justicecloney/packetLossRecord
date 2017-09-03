@@ -6,5 +6,3 @@ Requirements :
 
 If you happen to stumble in here and wish to leave feedback, please do.
 
-Currently supported:
-    Linux
